@@ -1,0 +1,32 @@
+/* Shared light theme. Solid surfaces remain usable without backdrop-filter. */
+:root {
+  color-scheme: light;
+  --serif: ui-serif, "New York", "Iowan Old Style", Palatino, Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --bg: #f7f8ff;
+  --panel: #fcfdff;
+  --panel-2: #eaf2fc;
+  --text: #263650;
+  --muted: #56647b;
+  --faint: #586780;
+  --line: #cbd9ec;
+  --line-soft: #dde5f2;
+  --accent: #37669d;
+  --accent-soft: #7eadd7;
+  --accent-wash: #e5effb;
+  --on-accent: #ffffff;
+  --green: #276d59;
+  --red: #a33256;
+  --amber: #846214;
+  --grey: #8595ad;
+  --shadow: 0 2px 5px rgba(62,86,128,.06), 0 18px 44px rgba(74,98,139,.14);
+  --glass: linear-gradient(135deg, rgba(255,255,255,.91), rgba(255,249,253,.87) 40%, rgba(238,247,255,.9));
+  --canvas: radial-gradient(ellipse at 0% 0%, #fbe2ef 0%, transparent 55%), radial-gradient(ellipse at 100% 100%, #dcefff 0%, transparent 65%), #f7f8ff;
+}
+::selection { background: #d6e7fc; color: #263650; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root { --glass: #fcfdff; }
+}

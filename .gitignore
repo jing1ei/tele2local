@@ -1,0 +1,41 @@
+# Rust / Tauri build artifacts
+/src-tauri/target/
+**/*.rs.bk
+
+/src-tauri/gen/
+
+# Mobile icon sets are not used by the macOS and Windows desktop bundles.
+/src-tauri/icons/android/
+/src-tauri/icons/ios/
+# Windows Store tile sets are unused by the NSIS installer.
+/src-tauri/icons/Square*Logo.png
+/src-tauri/icons/StoreLogo.png
+
+bots.json
+status.json
+pending-*.json
+*.corrupt-*
+*.tmp
+*.tmp-*
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+bot-api/
+
+/*.command
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*~
+
+# Node (in case a frontend toolchain is added later)
+node_modules/
+dist/
+
+# Python workflow checks
+__pycache__/
+*.pyc
