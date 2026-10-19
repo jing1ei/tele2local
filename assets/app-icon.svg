@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="tile" x1=".08" y1="0" x2=".9" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#ffe8f2"/><stop offset=".48" stop-color="#eee9fc"/><stop offset="1" stop-color="#b4dcf7"/>
+    </linearGradient>
+    <radialGradient id="pink"><stop stop-color="#ffaacb" stop-opacity=".85"/><stop offset="1" stop-color="#ffaacb" stop-opacity="0"/></radialGradient>
+    <radialGradient id="blue"><stop stop-color="#74bcf0" stop-opacity=".85"/><stop offset="1" stop-color="#74bcf0" stop-opacity="0"/></radialGradient>
+    <linearGradient id="rim" x2=".7" y2="1"><stop stop-color="white" stop-opacity=".95"/><stop offset=".5" stop-color="white" stop-opacity=".15"/><stop offset="1" stop-color="#74aade" stop-opacity=".45"/></linearGradient>
+    <linearGradient id="tray" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff8fd" stop-opacity=".92"/><stop offset=".5" stop-color="#e4eafa" stop-opacity=".85"/><stop offset="1" stop-color="#a4cbed" stop-opacity=".92"/></linearGradient>
+    <linearGradient id="front" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#fdfaff" stop-opacity=".95"/><stop offset="1" stop-color="#c4def5" stop-opacity=".96"/></linearGradient>
+    <linearGradient id="plane" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fcfeff"/><stop offset=".6" stop-color="#f5fbff"/><stop offset="1" stop-color="#acd5f5"/></linearGradient>
+    <linearGradient id="fold" x2="1" y2="1"><stop stop-color="#83b9e9"/><stop offset="1" stop-color="#468ecb"/></linearGradient>
+    <filter id="shadow" x="-35%" y="-35%" width="170%" height="185%"><feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#5d84b5" flood-opacity=".3"/></filter>
+    <filter id="planeShadow" x="-30%" y="-30%" width="160%" height="175%"><feDropShadow dx="0" dy="15" stdDeviation="12" flood-color="#4f85b8" flood-opacity=".32"/></filter>
+    <clipPath id="clip"><rect x="64" y="64" width="896" height="896" rx="208"/></clipPath>
+  </defs>
+  <rect x="70" y="82" width="884" height="874" rx="206" fill="#789bc8" opacity=".18"/>
+  <rect x="64" y="64" width="896" height="896" rx="208" fill="url(#tile)"/>
+  <g clip-path="url(#clip)">
+    <ellipse cx="265" cy="286" rx="430" ry="395" fill="url(#pink)"/>
+    <ellipse cx="801" cy="693" rx="455" ry="420" fill="url(#blue)"/>
+    <path d="M60 370 Q345 493 961 168 L961 67 H64Z" fill="white" opacity=".19"/>
+  </g>
+  <rect x="69" y="69" width="886" height="886" rx="203" fill="none" stroke="url(#rim)" stroke-width="10"/>
+  <g filter="url(#shadow)">
+    <path d="M273 595 335 523 H683 L751 595 777 718 Q782 769 730 784 H295 Q243 773 247 722Z" fill="url(#tray)" stroke="#fff" stroke-opacity=".75" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M293 601 341 548 H680 L729 601 698 682 H324Z" fill="#769bc8" opacity=".45"/>
+    <path d="M263 620 H402 Q414 620 418 632 L432 665 Q438 680 455 680 H565 Q583 680 589 664 L603 633 Q608 620 621 620 H759 V724 Q759 765 719 765 H303 Q263 765 263 724Z" fill="url(#front)" stroke="white" stroke-opacity=".9" stroke-width="6"/>
+    <path d="M301 742 H719" stroke="#88b6dc" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <g filter="url(#planeShadow)">
+    <path d="M269 383 732 245 Q754 238 746 262 L603 606 Q595 625 580 608 L466 482 279 409 Q249 397 269 383Z" fill="url(#plane)" stroke="white" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M466 482 721 270 507 504 490 573 Q486 588 480 570Z" fill="url(#fold)"/>
+    <path d="M507 504 603 606 548 493 721 270Z" fill="#cae4f8" opacity=".78"/>
+    <path d="M282 391 691 272" fill="none" stroke="white" stroke-opacity=".9" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <path d="M133 274 Q134 132 285 131" fill="none" stroke="white" stroke-width="9" stroke-opacity=".55" stroke-linecap="round"/>
+</svg>

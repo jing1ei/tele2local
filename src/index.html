@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tele2Local</title>
+<link rel="stylesheet" href="theme.css" />
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: var(--sans); font-size: 13.5px;
+    background: var(--canvas); color: var(--text);
+    min-height: 100vh; background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .brand { display: flex; align-items: center; min-width: 0; }
+  .brand-icon { width: 44px; height: 44px; margin-right: 11px; flex: 0 0 auto; }
+  .brand-copy { min-width: 0; }
+  /* ---- chrome ---- */
+  header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 24px 30px 20px; border-bottom: 1px solid rgba(255,255,255,.85);
+    background: var(--glass); box-shadow: 0 1px 0 var(--line-soft);
+  }
+  .wordmark {
+    font-family: var(--serif); font-size: 21px; font-weight: 500;
+    letter-spacing: .005em; margin: 0; line-height: 1.1;
+  }
+  .wordmark em { font-style: italic; color: var(--accent); }
+  .sub {
+    color: var(--muted); font-size: 11px; margin-top: 5px;
+    letter-spacing: .045em; text-transform: uppercase;
+  }
+  header > .actions { margin-left: 18px; }
+  .actions { display: flex; align-items: center; }
+  .actions > * + * { margin-left: 9px; }
+  main { padding: 8px 30px 34px; }
+
+  /* ---- buttons ---- */
+  button {
+    font: inherit; font-size: 12.5px; border: 1px solid var(--line);
+    background: rgba(255,255,255,.65); color: var(--text);
+    padding: 7px 14px; border-radius: 9px; cursor: pointer;
+    transition: border-color .16s ease, background .16s ease, color .16s ease;
+  }
+  button:hover { border-color: var(--accent-soft); background: var(--panel-2); }
+  button:active { transform: translateY(.5px); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  button.primary {
+    background: var(--accent); border-color: var(--accent); color: var(--on-accent);
+    font-weight: 600; box-shadow: 0 3px 8px rgba(55,102,157,.15), inset 0 1px 0 rgba(255,255,255,.2);
+  }
+  button.primary:hover { background: var(--accent); border-color: var(--accent); opacity: .88; }
+  button.primary:disabled { opacity: .45; cursor: default; }
+  button.danger:hover { border-color: var(--red); color: var(--red); background: transparent; }
+  button.small { padding: 5px 11px; font-size: 11.5px; }
+  button.icon {
+    border: none; background: transparent; color: var(--faint);
+    padding: 4px 7px; font-size: 13px; line-height: 1; border-radius: 7px;
+  }
+  button.icon:hover { color: var(--text); background: var(--panel-2); }
+
+  /* ---- table ---- */
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  main { overflow-x: auto; }
+  table { min-width: 710px; }
+  td { overflow-wrap: anywhere; }
+  th {
+    text-align: left; color: var(--faint); font-weight: 500; font-size: 10px;
+    letter-spacing: .1em; text-transform: uppercase;
+    padding: 16px 12px 9px; border-bottom: 1px solid var(--line);
+  }
+  td { padding: 13px 12px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  td.nowrap { white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  tbody tr { transition: background .16s ease; }
+  tbody tr:hover { background: var(--panel-2); }
+
+  .dot {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    margin-right: 9px; vertical-align: middle; position: relative; top: -1px;
+  }
+  .dot.green { background: var(--green); } .dot.red { background: var(--red); }
+  .dot.yellow { background: var(--amber); } .dot.grey { background: var(--grey); }
+  .name { font-family: var(--serif); font-size: 15px; font-weight: 500; }
+  .at { color: var(--muted); font-weight: 400; font-size: 11.5px; }
+  .path {
+    color: var(--muted); font-size: 11.5px; line-height: 1.5;
+    display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .path.open { padding: 0; border: 0; text-align: left; width: 100%; background: transparent; cursor: pointer; transition: color .16s ease; }
+  .path.open:hover { color: var(--accent); }
+  .err { white-space: normal; color: var(--red); font-size: 11.5px; margin-top: 4px; line-height: 1.45; }
+  .kbd {
+    font-size: 11.5px; padding: 3px 8px; border: 1px solid var(--line);
+    border-radius: 7px; background: var(--panel); color: var(--muted);
+    letter-spacing: .04em;
+  }
+  .empty {
+    color: var(--muted); text-align: center; padding: 76px 20px;
+    font-family: var(--serif); font-size: 15px; font-style: italic; line-height: 1.7;
+  }
+  .row-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; }
+  .row-actions > * { margin: 3px 0 0 7px; }
+
+  /* Toggle, rendered as a switch rather than an emoji so the row reads as one
+     designed object. Keeps the .toggle class — the row wiring selects on it. */
+  .switch {
+    display: inline-block; padding: 0; width: 32px; height: 19px; border-radius: 999px;
+    background: var(--panel-2); border: 1px solid var(--line);
+    cursor: pointer; position: relative; vertical-align: middle;
+    transition: background .18s ease, border-color .18s ease;
+  }
+  .switch i {
+    position: absolute; top: 2px; left: 2px; width: 13px; height: 13px;
+    border-radius: 50%; background: var(--faint); display: block;
+    transition: transform .18s ease, background .18s ease;
+  }
+  .switch.on { background: var(--accent); border-color: var(--accent); }
+  .switch.on i { transform: translateX(13px); background: var(--on-accent); }
+
+  /* ---- dialogs ----
+     The overlay is a padded flex box and the modal is capped to its height, so a
+     tall form (the edit dialog has a dozen fields) scrolls INSIDE the body while
+     the title and the Cancel/Save row stay pinned. Without the cap the dialog
+     grew past the window and put Save out of reach. */
+  .overlay {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0; inset: 0;
+    background: rgba(57,76,111,.23);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .overlay.show { display: flex; }
+  .modal {
+    background: var(--glass); border: 1px solid rgba(255,255,255,.95); border-radius: 18px;
+    width: 520px; max-width: 100%; max-height: 100%;
+    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .modal-head {
+    flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 22px 15px; border-bottom: 1px solid var(--line);
+  }
+  .modal-head > * + * { margin-left: 12px; }
+  .modal-head h2 {
+    margin: 0; font-family: var(--serif); font-size: 17px; font-weight: 500;
+    letter-spacing: .005em;
+  }
+  .modal-body { flex: 1 1 auto; overflow-y: auto; padding: 4px 22px 20px; }
+  .modal-actions {
+    flex: 0 0 auto; display: flex; align-items: center;
+    padding: 14px 22px; border-top: 1px solid var(--line); background: rgba(248,251,255,.95);
+  }
+  .modal-actions .validate-msg { flex: 1 1 auto; margin: 0; }
+  .modal-actions button { flex: 0 0 auto; margin-left: 10px; }
+
+  /* Grouping: the edit form is long, so it reads as three short sections
+     instead of one undifferentiated column of inputs. */
+  .fieldset { border: none; margin: 0; padding: 0; }
+  .fieldset + .fieldset { margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--line-soft); }
+  .fieldset h3 {
+    margin: 18px 0 2px; font-size: 10px; font-weight: 600; color: var(--accent);
+    letter-spacing: .13em; text-transform: uppercase;
+  }
+  .fieldset + .fieldset h3 { margin-top: 0; }
+
+  label {
+    display: block; font-size: 10.5px; color: var(--muted); margin: 16px 0 6px;
+    letter-spacing: .07em; text-transform: uppercase; font-weight: 500;
+  }
+  input[type=text], input[type=password], input[type=number], input[type=time] {
+    width: 100%; padding: 9px 12px; border-radius: 9px; border: 1px solid var(--line);
+    background: rgba(255,255,255,.85); color: var(--text); font: inherit; font-size: 13px;
+    transition: border-color .16s ease, box-shadow .16s ease;
+  }
+  input[type=text]:focus, input[type=password]:focus, input[type=number]:focus, input[type=time]:focus {
+    outline: none; border-color: var(--accent-soft); box-shadow: 0 0 0 3px var(--accent-wash);
+  }
+  input::placeholder { color: var(--faint); }
+  input[readonly] { color: var(--muted); }
+  .file-row { display: flex; }
+  .file-row > * + * { margin-left: 8px; }
+  .file-row input { flex: 1; min-width: 0; }
+  .check { display: flex; align-items: center; margin-top: 18px; }
+  .check input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--accent); flex: 0 0 auto; }
+  .check > * + * { margin-left: 9px; }
+  .check label {
+    margin: 0 0 0 9px; text-transform: none; letter-spacing: 0; font-size: 13px;
+    color: var(--text); font-weight: 400;
+  }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.55; }
+  .validate-msg { font-size: 11.5px; margin-top: 8px; min-height: 15px; line-height: 1.45; }
+  .ok { color: var(--green); } .bad { color: var(--red); }
+  .toggle { cursor: pointer; user-select: none; -webkit-user-select: none; }
+  button:disabled { cursor: wait; opacity: .55; }
+  button:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .notice { margin: 16px 0 4px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; overflow-wrap: anywhere; }
+  .notice.bad { border-color: var(--red); }
+  .status-label { display: block; color: var(--muted); font-size: 11px; margin: 5px 0 0 15px; }
+  .empty { padding: 64px 20px; font-style: normal; }
+  .empty h2 { font-size: 23px; font-weight: 500; color: var(--text); margin: 0 0 12px; }
+  .empty p { font: 13px/1.7 var(--sans); margin: 0 0 22px; }
+  .modal-body { min-height: 0; }
+  .validate-msg { overflow-wrap: anywhere; min-width: 0; max-height: 90px; overflow-y: auto; }
+  .check { flex-wrap: wrap; }
+  .sub { text-transform: none; letter-spacing: .01em; }
+  .modal-actions button { min-height: 34px; }
+  @media (min-width: 901px) {
+    table { margin-top: 16px; background: var(--glass); border-radius: 14px; overflow: hidden; box-shadow: 0 4px 18px rgba(83,105,144,.08); }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .overlay { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  }
+  @media (max-width: 900px) {
+    header { padding: 22px 22px 18px; align-items: center; }
+    main { padding: 8px 22px 24px; overflow: visible; }
+    table, tbody { display: block; min-width: 0; }
+    thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    tbody tr { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 12px 20px; padding: 20px; margin-top: 16px; border: 1px solid rgba(255,255,255,.95); border-radius: 16px; background: var(--glass); box-shadow: 0 4px 18px rgba(83,105,144,.08), inset 0 0 0 1px rgba(203,217,236,.5); }
+    td { display: block; padding: 0; border: 0; min-width: 0; }
+    td:nth-child(1) { grid-column: 1; grid-row: 1; }
+    td:nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
+    td:nth-child(3) { grid-column: 1; grid-row: 3; }
+    td:nth-child(4) { grid-column: 1; grid-row: 4; }
+    td:nth-child(5) { grid-column: 2; grid-row: 1; align-self: center; }
+    td:nth-child(6) { grid-column: 2; grid-row: 3 / 5; align-self: end; }
+    td:nth-child(3)::before { content: 'Shortcut  '; color: var(--muted); font-size: 11px; }
+    .path { white-space: normal; overflow-wrap: anywhere; }
+    .row-actions { flex-wrap: wrap; max-width: 160px; }
+    .switch { width: 38px; height: 24px; }
+    .switch i { width: 16px; height: 16px; top: 3px; left: 3px; }
+    .switch.on i { transform: translateX(14px); }
+    .row-actions button { min-height: 32px; }
+  }
+  @media (max-width: 520px) {
+    header { flex-wrap: wrap; padding: 18px; }
+    main { padding: 8px 14px 20px; }
+    .overlay { padding: 12px; }
+    .modal-head, .modal-actions { padding: 14px 16px; }
+    .modal-body { padding: 4px 16px 18px; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <img class="brand-icon" src="icon.png" alt="" width="44" height="44" />
+      <div class="brand-copy">
+      <h1 class="wordmark">Tele<em>2</em>Local</h1>
+      <div class="sub" id="summary">Loading…</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="server-btn">Local server</button>
+      <button class="primary" id="add-btn">Add bot</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="notice" class="notice" role="status" hidden></div>
+    <table aria-label="Your bots">
+      <thead>
+        <tr>
+          <th style="width:21%">Bot</th>
+          <th style="width:29%">Markdown file</th>
+          <th style="width:11%">Shortcut</th>
+          <th style="width:14%">Activity</th>
+          <th style="width:7%">Enabled</th>
+          <th style="width:18%"></th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty" id="empty" style="display:none">
+      <h2>Your notes start here.</h2>
+      <p>1. Create a bot with @BotFather in Telegram.<br>2. Add its token and choose a note file here.<br>3. Message your bot, or use Write note on this computer.</p>
+      <button class="primary" id="empty-add">Add your first bot</button>
+    </div>
+  </main>
+
+  <!-- Add / edit modal -->
+  <div class="overlay" id="overlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head">
+        <h2 id="modal-title">Add bot</h2>
+        <button class="icon" id="close-btn" aria-label="Close">&#10005;</button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" id="f-id" />
+
+        <section class="fieldset">
+          <h3>Essentials</h3>
+
+          <label for="f-name">Name</label>
+          <input type="text" id="f-name" placeholder="Ideas" />
+
+          <label for="f-token">Bot token (from @BotFather)</label>
+          <input type="password" autocomplete="off" spellcheck="false" id="f-token" placeholder="123456:ABC-DEF…" />
+          <div class="file-row" style="margin-top:8px">
+            <button class="small" id="validate-btn">Validate token</button>
+            <button class="small" id="show-token" type="button" aria-pressed="false">Show token</button>
+          </div>
+
+          <label for="f-file">Markdown file (the bot writes here)</label>
+          <div class="file-row">
+            <input type="text" id="f-file" placeholder="/Users/you/notes/ideas.md" />
+            <button class="small" id="browse-btn">Browse…</button>
+            <button class="small" id="new-file-btn">New file…</button>
+          </div>
+          <div class="hint">Browse for an existing note, or choose New file to pick a location. The file is created when you save your first note.</div>
+
+          <label for="f-user">Your Telegram user ID (only this person can write)</label>
+          <input type="text" inputmode="numeric" id="f-user" placeholder="123456789" />
+          <div class="hint">Get your numeric ID from @userinfobot. Use your own ID to keep this bot private. Set 0 only if you intend to let anyone write.</div>
+
+          <div class="check">
+            <input type="checkbox" id="f-enabled" checked />
+            <label for="f-enabled">Enabled (start polling now)</label>
+          </div>
+        </section>
+
+        <section class="fieldset">
+          <h3>Files &amp; shortcut</h3>
+
+          <label for="f-files-dir">Files folder (for received documents, photos, etc.)</label>
+          <div class="file-row">
+            <input type="text" id="f-files-dir" placeholder="/Users/you/notes/attachments" />
+            <button class="small" id="browse-dir-btn">Browse…</button>
+          </div>
+          <div class="hint">Files sent to the bot are saved here, with a note added to the markdown file. Leave blank to use an "attachments" folder next to the markdown file.</div>
+
+          <label for="f-shortcut">Local shortcut (optional)</label>
+          <div class="file-row">
+            <input type="text" id="f-shortcut" placeholder="e.g. ⌘⇧I — click Record" readonly />
+            <button class="small" id="rec-btn">Record</button>
+            <button class="small" id="clear-shortcut-btn">Clear</button>
+          </div>
+          <div class="hint">Press this hotkey anywhere on your computer to pop up a quick-note box for this file.</div>
+        </section>
+
+        <section class="fieldset">
+          <h3>Daily send-back</h3>
+
+          <div class="check">
+            <input type="checkbox" id="f-daily" />
+            <label for="f-daily">Send a file to me every day at</label>
+            <input type="time" aria-label="Daily send time" id="f-daily-time" value="08:00" style="width:auto;flex:0 0 auto;margin:0 0 0 9px" />
+          </div>
+          <div class="hint">Each morning the bot sends a file's exact contents back to you on Telegram (split across messages if long). Requires your Telegram user ID above.</div>
+          <div class="hint bad" id="f-daily-warn" style="display:none">⚠️ Set your Telegram user ID above — the daily send can't run without it.</div>
+
+          <label for="f-read-file">Send-back file (optional)</label>
+          <div class="file-row">
+            <input type="text" id="f-read-file" placeholder="same as the markdown file above" />
+            <button class="small" id="browse-read-btn">Browse…</button>
+          </div>
+          <div class="hint">The file the daily send reads. Leave blank to send back the same file the bot writes to. This file is only ever read — the bot never appends to it.</div>
+        </section>
+
+        <section class="fieldset">
+          <h3>Advanced</h3>
+
+          <label for="f-api-base">Bot API server (optional)</label>
+          <input type="text" id="f-api-base" placeholder="https://api.telegram.org" />
+          <div class="hint">Leave blank to use Telegram's public API, which can't download files larger than 20&nbsp;MB (most videos). Point this at a self-hosted local Bot API server (e.g. http://127.0.0.1:8081) to save files up to 2&nbsp;GB.</div>
+        </section>
+      </div>
+
+      <!-- The status line lives in the footer, not beside the token field: on a
+           long form a save error rendered mid-scroll would never be seen. -->
+      <div class="modal-actions">
+        <div class="validate-msg" id="validate-msg" role="status" aria-live="polite"></div>
+        <button id="cancel-btn">Cancel</button>
+        <button class="primary" id="save-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Local server settings modal -->
+  <div class="overlay" id="srv-overlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="srv-title">
+      <div class="modal-head">
+        <h2 id="srv-title">Local Bot API server</h2>
+        <button class="icon" id="s-close-btn" aria-label="Close">&#10005;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="hint" style="margin-top:16px">
+          Telegram's public API can't download files larger than 20&nbsp;MB (most videos).
+          Run a local server to raise that to 2&nbsp;GB. You'll need to build
+          <span class="kbd">telegram-bot-api</span> from source first — see
+          <span class="kbd">tdlib.github.io/telegram-bot-api/build.html</span>.
+        </div>
+
+        <div class="check">
+          <input type="checkbox" id="s-enabled" />
+          <label for="s-enabled">Run the local server and route all bots through it</label>
+        </div>
+
+        <label for="s-api-id">api_id</label>
+        <input type="number" id="s-api-id" placeholder="123456" />
+        <label for="s-api-hash">api_hash</label>
+        <input type="password" autocomplete="off" spellcheck="false" id="s-api-hash" placeholder="leave blank to keep stored value" />
+        <div class="hint">Get both from <b>my.telegram.org</b> → API development tools. The API hash is stored in your operating system’s credential store.</div>
+
+        <label for="s-bin">Server binary path (optional)</label>
+        <input type="text" id="s-bin" placeholder="auto-detect" />
+        <div class="hint" id="s-bin-hint">Leave blank to auto-detect.</div>
+
+        <label for="s-port">Port</label>
+        <input type="number" id="s-port" placeholder="8081" min="1" max="65535" />
+
+        <div class="hint" id="s-status" style="margin-top:14px"></div>
+        <div class="hint">
+          Note: a bot already used with the public API must be logged out of it before a local
+          server can take over — send <span class="kbd">https://api.telegram.org/bot&lt;token&gt;/logOut</span>
+          once per bot. The bot logs back in automatically if you later disable the local server.
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <div class="validate-msg" id="s-msg" role="status" aria-live="polite"></div>
+        <button id="s-cancel-btn">Cancel</button>
+        <button class="primary" id="s-save-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+<script src="platform.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  // If the Tauri backend isn't attached (e.g. opened as a plain .html), fall back
+  // to a stub so the UI still loads and surfaces the problem instead of crashing.
+  const tauriReady = !!(window.__TAURI__ && window.__TAURI__.core);
+  const invoke = tauriReady
+    ? window.__TAURI__.core.invoke
+    : () => Promise.reject(new Error('Not running inside the Tele2Local app'));
+
+  // Escape for both text and attribute contexts (quotes included, since esc()
+  // output is interpolated into title="..." attributes below).
+  function esc(s) {
+    return String(s ?? '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // Declared here (before `closeForm` uses it) because `let` is not hoisted.
+  let stopRecording = null;
+
+  const {isMac, modifiers, prettyShortcut} = window.Tele2LocalPlatform;
+  if (!isMac) {
+    $('f-file').placeholder = 'C:\\Users\\you\\Notes\\ideas.md';
+    $('f-files-dir').placeholder = 'C:\\Users\\you\\Notes\\attachments';
+    $('f-shortcut').placeholder = 'e.g. Ctrl+Alt+I — click Record';
+  }
+
+  // The send-back file, but only when it's a different file from the one the bot
+  // writes to — otherwise the row would just repeat the path above it.
+  function sendBackFile(b) {
+    const rf = (b.read_file || '').trim();
+    return rf && rf !== (b.file || '').trim() ? rf : '';
+  }
+
+  // A bot's error is either the poll-loop error or a failed daily send; surface
+  // whichever is set (the poll loop never clears the daily one).
+  function botError(b) {
+    return b.status.last_storage_error || b.status.last_error || b.status.last_download_error || b.status.last_daily_error || '';
+  }
+  function dotClass(b) {
+    if (!b.enabled) return 'grey';
+    if (botError(b)) return 'red';
+    if (b.status.running) return 'green';
+    return 'yellow';
+  }
+  function dotTitle(b) {
+    if (!b.enabled) return 'Disabled';
+    if (botError(b)) return 'Error: ' + botError(b);
+    if (b.status.running) return 'Running';
+    return 'Starting…';
+  }
+
+  // Fingerprint of the last rendered bot list. The table is rebuilt from
+  // scratch, so re-rendering it on every 3s poll would discard any text
+  // selection and flicker the row under the cursor — for identical content.
+  let lastRender = null;
+  let refreshVersion = 0;
+  let formVersion = 0;
+  let validationVersion = 0;
+  let formOrigin = null;
+  const pendingBots = new Set();
+
+  function notify(message, bad = false) {
+    $('notice').textContent = message;
+    $('notice').className = 'notice' + (bad ? ' bad' : '');
+    $('notice').hidden = !message;
+  }
+  function setFormBusy(overlayId, busy) {
+    $(overlayId).setAttribute('aria-busy', String(busy));
+    $(overlayId).querySelectorAll('button, input').forEach(el => {
+      if (busy) { el.dataset.wasDisabled = String(el.disabled); el.disabled = true; }
+      else { el.disabled = el.dataset.wasDisabled === 'true'; delete el.dataset.wasDisabled; }
+    });
+  }
+
+  async function refresh() {
+    const version = ++refreshVersion;
+    if (!tauriReady) {
+      $('summary').textContent = '⚠️ Backend not attached — open Tele2Local from the menu bar or system tray, not the .html file.';
+      $('empty').style.display = 'none';
+      return;
+    }
+    let bots;
+    try {
+      bots = await invoke('get_bots');
+      if (version !== refreshVersion) return;
+    } catch (e) {
+      // Leave the table as it was: rendering the empty state here would tell
+      // someone with ten configured bots that they have none.
+      if (version !== refreshVersion) return;
+      console.error(e);
+      $('summary').textContent = '⚠️ Could not read the bot list — ' + e;
+      // The summary now shows an error rather than the counts, so force the
+      // next successful poll to redraw even if the data hasn't changed.
+      lastRender = null;
+      return;
+    }
+    const sig = JSON.stringify(bots);
+    if (sig === lastRender) return;
+    lastRender = sig;
+    const rows = $('rows');
+    const focused = document.activeElement;
+    const focusKey = focused?.dataset.focusKey;
+    rows.innerHTML = '';
+    $('empty').style.display = bots.length ? 'none' : 'block';
+
+    let running = 0, errors = 0;
+    for (const b of bots) {
+      const err = botError(b);
+      if (b.enabled && b.status.running && !err) running++;
+      if (b.enabled && err) errors++;
+      const at = b.status.username ? '@' + b.status.username : '';
+      const last = b.status.last_message_at ? 'last ' + b.status.last_message_at : '';
+      const tr = document.createElement('tr');
+      tr.dataset.botId = b.id;
+      tr.innerHTML = `
+        <td>
+          <span class="dot ${dotClass(b)}" title="${esc(dotTitle(b))}"></span>
+          <span class="name">${esc(b.name)}</span> <span class="at">${esc(at)}</span>
+          <span class="status-label">${esc(!b.enabled ? 'Paused' : err ? 'Needs attention' : b.status.running ? 'Connected' : 'Connecting…')}</span>
+          ${botError(b) ? `<div class="err">${esc(botError(b))}</div>` : ''}
+        </td>
+        <td>${b.file
+            ? `<button class="path open" data-open="${esc(b.file)}" title="${esc(b.file)}">${esc(b.file)}</button>`
+            : '<span class="path">—</span>'}
+          ${b.daily_send ? `<div class="at" style="margin-top:5px">${b.enabled && b.allowed_user_id !== '0' ? 'Sends daily at' : 'Daily send paused ·'} ${esc(b.daily_time || '08:00')}${
+              sendBackFile(b)
+                ? ` · reads <button class="path open" data-open="${esc(sendBackFile(b))}" data-read-only="true" title="${esc(sendBackFile(b))}">${esc(sendBackFile(b))}</button>`
+                : ''}</div>` : ''}</td>
+        <td class="nowrap">${b.shortcut ? `<span class="kbd">${esc(prettyShortcut(b.shortcut))}</span>` : '<span class="at">—</span>'}${b.shortcut_error ? `<div class="err">${esc(b.shortcut_error)}</div>` : ''}</td>
+        <td class="nowrap">${esc(b.status.message_count)} saved<div class="at">${esc(last)}</div></td>
+        <td><button aria-label="Enable ${esc(b.name)}" class="toggle switch${b.enabled ? ' on' : ''}" role="switch"
+              aria-checked="${b.enabled}" title="Click to toggle"
+              data-id="${esc(b.id)}" data-en="${b.enabled}"><i></i></button></td>
+        <td><div class="row-actions">
+          <button class="small" data-capture="${esc(b.id)}">Write note</button>
+          <button class="small" data-edit="${esc(b.id)}">Edit</button>
+          <button class="small danger" data-del="${esc(b.id)}">Remove</button>
+        </div></td>`;
+      tr.querySelectorAll('button').forEach((el, index) => {
+        el.dataset.focusKey = b.id + ':' + index;
+        if (pendingBots.has(b.id)) el.disabled = true;
+      });
+      rows.appendChild(tr);
+    }
+
+    rows.querySelectorAll('[data-open]').forEach(el =>
+      el.onclick = async () => {
+        try { await invoke('open_note_file', { file: el.dataset.open, create: el.dataset.readOnly !== 'true' }); }
+        catch (e) { notify('Could not open file: ' + e, true); }
+      });
+    rows.querySelectorAll('[data-capture]').forEach(el => el.onclick = async () => {
+      try { await invoke('open_quick_note', {id: el.dataset.capture}); }
+      catch (e) { notify('Could not open quick capture: ' + e, true); }
+    });
+    rows.querySelectorAll('[data-edit]').forEach(el =>
+      el.onclick = () => openForm(bots.find(x => x.id === el.dataset.edit)));
+    rows.querySelectorAll('[data-del]').forEach(el =>
+      el.onclick = () => removeBot(el.dataset.del, bots.find(x => x.id === el.dataset.del)));
+    rows.querySelectorAll('.toggle').forEach(el =>
+      el.onclick = async () => {
+        if (pendingBots.has(el.dataset.id)) return;
+        pendingBots.add(el.dataset.id); el.disabled = true;
+        try {
+          await invoke('set_enabled', { id: el.dataset.id, enabled: el.dataset.en !== 'true' });
+        } catch (e) {
+          notify('Could not change that bot: ' + e, true);
+        } finally { pendingBots.delete(el.dataset.id); el.disabled = false; }
+        lastRender = null;
+        refresh();
+      });
+
+    if (focusKey) [...rows.querySelectorAll('button')].find(el => el.dataset.focusKey === focusKey)?.focus();
+    $('summary').textContent =
+      `${bots.length} bot${bots.length === 1 ? '' : 's'} · ${running} running${errors ? ' · ' + errors + ' error(s)' : ''}`;
+  }
+
+  function openForm(bot) {
+    if (document.querySelector('.overlay.show')) return;
+    formOrigin = document.activeElement;
+    $('f-token').removeAttribute('aria-invalid');
+    $('f-file').removeAttribute('aria-invalid');
+    $('f-user').removeAttribute('aria-invalid');
+    formVersion++;
+    $('f-token').type = 'password';
+    $('show-token').textContent = 'Show token';
+    $('show-token').setAttribute('aria-pressed', 'false');
+    $('modal-title').textContent = bot ? 'Edit bot' : 'Add bot';
+    $('f-id').value = bot?.id || '';
+    $('f-name').value = bot?.name || '';
+    // The token is never sent to the UI. On edit, leaving this blank keeps the
+    // token already stored in the Keychain.
+    $('f-token').value = '';
+    $('f-token').dataset.had = bot?.has_token ? '1' : '';
+    $('f-token').placeholder = bot?.has_token ? 'Leave blank to keep current token' : '123456:ABC-DEF…';
+    $('f-file').value = bot?.file || '';
+    $('f-read-file').value = bot?.read_file || '';
+    $('f-files-dir').value = bot?.files_dir || '';
+    $('f-user').value = bot ? bot.allowed_user_id : '';
+    $('f-api-base').value = bot?.api_base || '';
+    const acc = bot?.shortcut || '';
+    $('f-shortcut').dataset.acc = acc;
+    $('f-shortcut').value = acc ? prettyShortcut(acc) : '';
+    $('f-daily').checked = bot ? !!bot.daily_send : false;
+    $('f-daily-time').value = (bot && bot.daily_time) ? bot.daily_time : '08:00';
+    $('f-enabled').checked = bot ? bot.enabled : true;
+    updateDailyWarn();
+    clearValidate();
+    $('overlay').classList.add('show');
+    // Always open at the top of the form with the cursor in the first field —
+    // the body scrolls independently now, so it would otherwise keep the
+    // scroll position left behind by the previously edited bot.
+    $('overlay').querySelector('.modal-body').scrollTop = 0;
+    $('f-name').focus();
+  }
+
+  function updateDailyWarn() {
+    const warn = $('f-daily-warn');
+    if (!$('f-daily').checked) { warn.style.display = 'none'; return; }
+    const idSet = (parseInt($('f-user').value || '0', 10) || 0) !== 0;
+    if (!idSet) {
+      warn.textContent = '⚠️ Set your Telegram user ID above — the daily send can\'t run without it.';
+      warn.style.display = 'block';
+    } else if (!$('f-enabled').checked) {
+      warn.textContent = '⚠️ Enable the bot below — the daily send only runs while the bot is enabled.';
+      warn.style.display = 'block';
+    } else {
+      warn.style.display = 'none';
+    }
+  }
+  function closeForm() {
+    if ($('save-btn').disabled) return;
+    if (stopRecording) stopRecording();
+    formVersion++; clearValidate();
+    $('f-token').value = '';
+    $('overlay').classList.remove('show');
+    if (formOrigin?.isConnected) formOrigin.focus(); else $('add-btn').focus();
+  }
+  function clearValidate() { validationVersion++; $('validate-btn').disabled = !$('f-token').value.trim(); $('validate-msg').textContent = ''; $('validate-msg').className = 'validate-msg'; }
+
+  async function validateToken() {
+    const token = $('f-token').value.trim();
+    if (!token) return;
+    const version = ++validationVersion;
+    $('validate-btn').disabled = true;
+    const msg = $('validate-msg');
+    msg.textContent = 'Checking…'; msg.className = 'validate-msg';
+    try {
+      const apiBase = $('f-api-base').value.trim() || null;
+      const username = await invoke('validate_token', { token, apiBase });
+      if (version !== validationVersion) return;
+      msg.textContent = '✓ Connected to @' + username;
+      msg.className = 'validate-msg ok';
+    } catch (e) {
+      if (version !== validationVersion) return;
+      msg.textContent = '✗ ' + e;
+      msg.className = 'validate-msg bad';
+    } finally { if (version === validationVersion) $('validate-btn').disabled = false; }
+  }
+
+  // One picker helper for all three Browse buttons.
+  async function browseInto(fieldId, command, args = {}) {
+    const version = formVersion;
+    try {
+      const path = await invoke(command, args);
+      if (path && version === formVersion && !$(fieldId).disabled) $(fieldId).value = path;
+    } catch (e) {
+      if (version === formVersion) { $('validate-msg').textContent = 'Could not open the file picker: ' + e; $('validate-msg').className = 'validate-msg bad'; }
+    }
+  }
+
+  const MODIFIER_CODES = ['MetaLeft','MetaRight','ControlLeft','ControlRight',
+                          'AltLeft','AltRight','ShiftLeft','ShiftRight'];
+  // `stopRecording` (declared at the top) is set while the recorder is capturing
+  // keys. Recording swallows every keystroke (capture phase, preventDefault), so
+  // a listener left behind would make the whole window untypeable.
+  function recordShortcut() {
+    if (stopRecording) stopRecording();
+    const inp = $('f-shortcut'), btn = $('rec-btn');
+    inp.value = 'Press keys…'; btn.textContent = '…';
+    const onKey = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if (e.key === 'Escape') { cancel(); return; }
+      if (MODIFIER_CODES.includes(e.code)) return; // wait for a real key
+      const mods = modifiers(e);
+      if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+        // A bare key would register globally and hijack it system-wide.
+        inp.value = isMac ? 'Add ⌘ / ⌃ / ⌥ …' : 'Add Ctrl / Alt / Win …';
+        return; // keep listening for a valid combo
+      }
+      const acc = [...mods, e.code].join('+');
+      inp.dataset.acc = acc;
+      inp.value = prettyShortcut(acc);
+      cleanup();
+    };
+    const cancel = () => { inp.value = inp.dataset.acc ? prettyShortcut(inp.dataset.acc) : ''; cleanup(); };
+    const cleanup = () => {
+      window.removeEventListener('keydown', onKey, true);
+      btn.textContent = 'Record';
+      stopRecording = null;
+    };
+    stopRecording = cancel;
+    window.addEventListener('keydown', onKey, true);
+  }
+  function clearShortcut() { if (stopRecording) stopRecording(); $('f-shortcut').dataset.acc = ''; $('f-shortcut').value = ''; }
+
+  async function save() {
+    if ($('save-btn').disabled) return;
+    const id = $('f-id').value;
+    if (!$('f-user').value.trim()) {
+      $('f-user').focus(); $('f-user').setAttribute('aria-invalid', 'true');
+      $('validate-msg').textContent = 'Enter your Telegram user ID, or explicitly enter 0 to allow anyone.';
+      $('validate-msg').className = 'validate-msg bad'; return;
+    }
+    const args = {
+      name: $('f-name').value.trim() || 'Untitled',
+      token: $('f-token').value.trim(),
+      file: $('f-file').value.trim(),
+      // Blank means send back the file the bot writes to.
+      readFile: $('f-read-file').value.trim() || null,
+      filesDir: $('f-files-dir').value.trim() || null,
+      // Send as a string, not a parsed number: a 64-bit Telegram user id can
+      // exceed JS's exact-integer range (2^53). The Rust side parses it to i64.
+      allowedUserId: ($('f-user').value || '0').trim() || '0',
+      apiBase: $('f-api-base').value.trim() || null,
+      enabled: $('f-enabled').checked,
+      shortcut: $('f-shortcut').dataset.acc || null,
+      dailySend: $('f-daily').checked,
+      dailyTime: $('f-daily-time').value || '08:00',
+    };
+    // On edit, a blank token keeps the existing one; on add, a token is required.
+    const hadToken = $('f-token').dataset.had === '1';
+    if ((!args.token && !hadToken) || !args.file) {
+      const missing = !args.token && !hadToken ? $('f-token') : $('f-file');
+      missing.setAttribute('aria-invalid', 'true'); missing.focus();
+      const m = $('validate-msg'); m.textContent = missing.id === 'f-token' ? 'Enter a bot token from @BotFather.' : 'Choose a Markdown file to save your notes.'; m.className = 'validate-msg bad';
+      return;
+    }
+    const numericId = args.allowedUserId.replace(/^0+/, '') || '0';
+    if (!/^\d+$/.test(args.allowedUserId) || numericId.length > 19 || (numericId.length === 19 && numericId > '9223372036854775807')) {
+      $('f-user').setAttribute('aria-invalid', 'true'); $('f-user').focus();
+      $('validate-msg').textContent = 'Enter a numeric Telegram user ID, or 0 to allow anyone.';
+      $('validate-msg').className = 'validate-msg bad'; return;
+    }
+    if (stopRecording) stopRecording();
+    validationVersion++;
+    setFormBusy('overlay', true);
+    $('save-btn').textContent = 'Saving…';
+    $('validate-msg').className = 'validate-msg';
+    $('validate-msg').textContent = 'Saving your bot…';
+    try {
+      // One `form` payload for both commands — the Rust side takes a single
+      // struct rather than a dozen positional arguments.
+      if (id) await invoke('update_bot', { id, form: args });
+      else await invoke('add_bot', { form: args });
+      setFormBusy('overlay', false);
+      closeForm();
+      notify(id ? 'Changes saved.' : 'Bot saved. Open your bot in Telegram, tap Start, then send a note. Or choose Write note below.');
+      refresh();
+    } catch (e) {
+      const m = $('validate-msg'); m.textContent = '✗ ' + e; m.className = 'validate-msg bad';
+    } finally {
+      if ($('overlay').getAttribute('aria-busy') === 'true') setFormBusy('overlay', false);
+      $('validate-btn').disabled = !$('f-token').value.trim();
+      $('save-btn').textContent = 'Save';
+    }
+  }
+
+  async function removeBot(id, bot) {
+    if (pendingBots.has(id)) return;
+    if (!confirm(`Remove "${bot?.name || 'this bot'}"? The markdown file is left untouched.`)) return;
+    pendingBots.add(id);
+    $('rows').querySelectorAll('tr').forEach(row => { if (row.dataset.botId === id) row.querySelectorAll('button').forEach(el => el.disabled = true); });
+    try {
+      await invoke('remove_bot', { id });
+      notify('Bot removed. Your notes and attachments are still on disk.');
+    } catch (e) {
+      notify('Could not remove that bot: ' + e, true);
+    } finally { pendingBots.delete(id); }
+    lastRender = null;
+    refresh();
+  }
+
+  // ---- local server settings ----
+  async function openServerForm() {
+    if ($('server-btn').disabled || document.querySelector('.overlay.show')) return;
+    $('server-btn').disabled = true;
+    $('s-msg').textContent = ''; $('s-msg').className = 'validate-msg';
+    let cfg;
+    try {
+      cfg = await invoke('get_server_config');
+    } catch (e) {
+      // Opening with blank defaults would arm the Save button to overwrite a
+      // working server config with "disabled, no api_id, no binary".
+      console.error(e);
+      notify('Could not read the local server settings: ' + e, true);
+      return;
+    } finally { $('server-btn').disabled = false; }
+    if (document.querySelector('.overlay.show')) return;
+    $('s-enabled').checked = !!cfg.enabled;
+    $('s-api-id').value = cfg.api_id || '';
+    $('s-api-hash').value = '';
+    $('s-api-hash').dataset.had = String(cfg.has_api_hash);
+    $('s-api-hash').placeholder = cfg.has_api_hash ? 'leave blank to keep stored value' : 'your api_hash';
+    $('s-bin').value = cfg.bin_path || '';
+    $('s-port').value = cfg.port || 8081;
+    $('s-bin-hint').textContent = cfg.detected_bin
+      ? 'Using: ' + cfg.detected_bin
+      : '⚠️ telegram-bot-api not found — install it or enter its full path.';
+    if (cfg.running) {
+      $('s-status').textContent = '🟢 Server running';
+      $('s-status').className = 'hint';
+    } else if (cfg.last_error) {
+      $('s-status').textContent = '🔴 Server not running — ' + cfg.last_error;
+      $('s-status').className = 'hint bad';
+    } else {
+      $('s-status').textContent = '⚪ Server not running';
+      $('s-status').className = 'hint';
+    }
+    $('srv-overlay').classList.add('show');
+    $('srv-overlay').querySelector('.modal-body').scrollTop = 0;
+    $('s-enabled').focus();
+  }
+  function closeServerForm() {
+    if ($('s-save-btn').disabled) return;
+    $('s-api-hash').value = '';
+    $('srv-overlay').classList.remove('show');
+    $('server-btn').focus();
+  }
+
+  async function saveServerConfig() {
+    if ($('s-save-btn').disabled) return;
+    const port = Number($('s-port').value || '8081');
+    const apiId = Number($('s-api-id').value || '0');
+    if (!Number.isInteger(port) || port < 1 || port > 65535 || !Number.isSafeInteger(apiId) || apiId < 0) {
+      $('s-msg').textContent = 'Enter a whole-number port from 1 to 65535 and a valid API ID.'; $('s-msg').className = 'validate-msg bad'; return;
+    }
+    if ($('s-enabled').checked && (!apiId || (!$('s-api-hash').value.trim() && $('s-api-hash').dataset.had !== 'true'))) {
+      $('s-msg').textContent = 'API ID and API hash are required to start the server.'; $('s-msg').className = 'validate-msg bad'; return;
+    }
+    const args = {
+      enabled: $('s-enabled').checked,
+      binPath: $('s-bin').value.trim() || null,
+      port, apiId,
+      apiHash: $('s-api-hash').value.trim() || null,
+    };
+    setFormBusy('srv-overlay', true);
+    $('s-save-btn').textContent = 'Applying…';
+    const m = $('s-msg');
+    m.textContent = 'Applying…'; m.className = 'validate-msg';
+    try {
+      const result = await invoke('update_server_config', args);
+      if (args.apiHash) {
+        $('s-api-hash').dataset.had = 'true';
+        $('s-api-hash').value = '';
+        $('s-api-hash').placeholder = 'leave blank to keep stored value';
+      }
+      if (result?.startup_error) {
+        $('s-status').textContent = 'Server not running — ' + result.startup_error;
+        $('s-status').className = 'hint bad';
+        m.textContent = 'Settings saved. Fix the server issue and Save to retry.';
+        m.className = 'validate-msg bad';
+        refresh();
+        return;
+      }
+      setFormBusy('srv-overlay', false);
+      closeServerForm();
+      notify('Local server settings saved.');
+      refresh();
+    } catch (e) {
+      m.textContent = '✗ ' + e; m.className = 'validate-msg bad';
+    } finally {
+      if ($('srv-overlay').getAttribute('aria-busy') === 'true') setFormBusy('srv-overlay', false);
+      $('s-save-btn').textContent = 'Save';
+    }
+  }
+
+  // Wire up the static controls here (not as inline on* attributes): a release
+  // build's CSP nonces the <script>, which makes the browser ignore
+  // 'unsafe-inline', so inline onclick handlers would be silently blocked.
+  $('empty-add').onclick = () => openForm();
+  $('show-token').onclick = () => {
+    const show = $('f-token').type === 'password';
+    $('f-token').type = show ? 'text' : 'password';
+    $('show-token').textContent = show ? 'Hide token' : 'Show token';
+    $('show-token').setAttribute('aria-pressed', String(show));
+  };
+  $('f-api-base').oninput = () => clearValidate();
+  $('add-btn').onclick = () => openForm();
+  $('server-btn').onclick = () => openServerForm();
+  $('s-cancel-btn').onclick = () => closeServerForm();
+  $('s-save-btn').onclick = () => saveServerConfig();
+  $('validate-btn').onclick = () => validateToken();
+  $('new-file-btn').onclick = () => browseInto('f-file', 'pick_markdown_file', {newFile: true});
+  $('browse-btn').onclick = () => browseInto('f-file', 'pick_markdown_file');
+  $('browse-read-btn').onclick = () => browseInto('f-read-file', 'pick_markdown_file');
+  $('browse-dir-btn').onclick = () => browseInto('f-files-dir', 'pick_folder');
+  $('rec-btn').onclick = () => recordShortcut();
+  $('clear-shortcut-btn').onclick = () => clearShortcut();
+  $('cancel-btn').onclick = () => closeForm();
+  $('close-btn').onclick = () => closeForm();
+  $('s-close-btn').onclick = () => closeServerForm();
+  $('overlay').addEventListener('mousedown', (e) => { if (e.target === $('overlay')) closeForm(); });
+  $('srv-overlay').addEventListener('mousedown', (e) => { if (e.target === $('srv-overlay')) closeServerForm(); });
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !e.isComposing) {
+      e.preventDefault();
+      if ($('overlay').classList.contains('show')) save();
+      else if ($('srv-overlay').classList.contains('show')) saveServerConfig();
+    }
+    if (e.key === 'Tab') {
+      const modal = document.querySelector('.overlay.show');
+      if (modal) {
+        const controls = [...modal.querySelectorAll('button, input')].filter(el => !el.disabled && el.getClientRects().length);
+        if (!controls.length) { e.preventDefault(); return; }
+        const first = controls[0], last = controls[controls.length - 1];
+        if (e.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && (document.activeElement === last || !modal.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
+      }
+    }
+    if (e.key !== 'Escape') return;
+    if ($('overlay').classList.contains('show')) closeForm();
+    else if ($('srv-overlay').classList.contains('show')) closeServerForm();
+  });
+  $('save-btn').onclick = () => save();
+  $('f-token').oninput = () => { $('f-token').removeAttribute('aria-invalid'); clearValidate(); };
+  $('f-file').oninput = () => $('f-file').removeAttribute('aria-invalid');
+  $('f-daily').onchange = () => updateDailyWarn();
+  $('f-user').oninput = () => { $('f-user').removeAttribute('aria-invalid'); updateDailyWarn(); };
+  $('f-enabled').onchange = () => updateDailyWarn();
+
+  refresh();
+  // Poll only while the window is actually visible; refresh immediately on return.
+  setInterval(() => { if (!document.hidden) refresh(); }, 3000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+</script>
+</body>
+</html>

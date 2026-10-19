@@ -1,0 +1,9 @@
+{
+  "project": "Tele2Local",
+  "assets": {
+    "Tele2Local-1.0.0-macOS-universal.dmg": "Tele2Local-1.0.0-macOS-universal.dmg",
+    "Tele2Local-1.0.0-Windows-x64.exe": "Tele2Local-1.0.0-Windows-x64.exe"
+  },
+  "extras": [],
+  "notes": "Tele2Local 1.0.0. Download the package matching your operating system and processor. macOS-universal supports Intel and Apple silicon; x64 means Intel/AMD 64-bit; arm64 means ARM 64-bit. Source and SHA256SUMS.txt are included. See the README for installation, platform requirements, signing and third-party notices."
+}
