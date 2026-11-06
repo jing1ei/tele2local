@@ -115,11 +115,18 @@ class ReleaseTests(unittest.TestCase):
         self.assertTrue(any(m=='PATCH' and e.endswith('/git/refs/tags/v1.0.0') and p=={'sha':'built','force':True} for m,e,p in self.calls))
         self.assertTrue(any(m=='DELETE' and e.endswith('/assets/42') for m,e,_ in self.calls))
         first = next(p for m,e,p in self.calls if m=='PATCH' and '/releases/' in e)
-        self.assertTrue(first['draft'])
+        self.assertFalse(first['draft'])
 
     def test_failed_upload_never_moves_tag_or_publishes(self):
         self.fail_upload = True
         with self.assertRaises(RuntimeError): self.publish()
+        self.assert_unpublished()
+
+    def test_failed_refresh_keeps_existing_release_public(self):
+        self.existing = True
+        self.fail_upload = True
+        with self.assertRaises(RuntimeError): self.publish()
+        self.assertFalse(any(m == 'PATCH' and '/releases/' in e for m, e, _ in self.calls))
         self.assert_unpublished()
 
     def test_corrupt_upload_never_moves_tag_or_publishes(self):

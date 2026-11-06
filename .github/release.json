@@ -5,5 +5,5 @@
     "Tele2Local-1.0.0-Windows-x64.exe": "Tele2Local-1.0.0-Windows-x64.exe"
   },
   "extras": [],
-  "notes": "Tele2Local 1.0.0. Download the package matching your operating system and processor. macOS-universal supports Intel and Apple silicon; x64 means Intel/AMD 64-bit; arm64 means ARM 64-bit. Source and SHA256SUMS.txt are included. See the README for installation, platform requirements, signing and third-party notices."
+  "notes": "Tele2Local 1.0.0. macOS 11+: universal Intel/Apple Silicon DMG. Windows 10/11: x64 setup EXE. Builds are unsigned. Source ZIP and SHA256SUMS.txt are included. See the README for installation."
 }

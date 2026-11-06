@@ -188,9 +188,44 @@ pub fn remove_journal(status_path: &Path, id: &str) {
     let _ = std::fs::remove_file(journal_path(status_path, id));
 }
 
-/// Persist the journal atomically.
-async fn persist_journal(path: &Path, journal: &Journal) -> std::io::Result<()> {
-    write_journal(path, &journal.lock().await)
+/// Commit removal before changing memory, so a failed write can be retried.
+async fn complete_download(path: &Path, journal: &Journal, update_id: i64) -> std::io::Result<()> {
+    let mut jobs = journal.lock().await;
+    let remaining: Vec<_> = jobs
+        .iter()
+        .filter(|job| job.update_id != update_id)
+        .cloned()
+        .collect();
+    write_journal(path, &remaining)?;
+    *jobs = remaining;
+    Ok(())
+}
+
+async fn finish_download(
+    path: &Path,
+    journal: &Journal,
+    update_id: i64,
+    status: &StatusMap,
+    id: &str,
+    stop_rx: &mut watch::Receiver<bool>,
+) -> bool {
+    loop {
+        match complete_download(path, journal, update_id).await {
+            Ok(()) => {
+                set_status(status, id, |s| s.last_download_error = None).await;
+                return true;
+            }
+            Err(e) => {
+                set_status(status, id, |s| {
+                    s.last_download_error = Some(format!("could not update download queue: {e}"));
+                })
+                .await;
+                if sleep_or_stop(stop_rx, 5).await {
+                    return false;
+                }
+            }
+        }
+    }
 }
 
 fn write_journal(path: &Path, jobs: &[PendingDownload]) -> std::io::Result<()> {
@@ -898,11 +933,18 @@ async fn download_worker(
         };
 
         if already_saved(&status, &id, job.update_id).await {
-            journal
-                .lock()
-                .await
-                .retain(|p| p.update_id != job.update_id);
-            let _ = persist_journal(&journal_file, &journal).await;
+            if !finish_download(
+                &journal_file,
+                &journal,
+                job.update_id,
+                &status,
+                &id,
+                &mut stop_rx,
+            )
+            .await
+            {
+                return;
+            }
             continue;
         }
 
@@ -1033,16 +1075,19 @@ async fn download_worker(
             }
         }
 
-        // Done (saved or permanently failed): drop it from the journal.
-        journal
-            .lock()
-            .await
-            .retain(|p| p.update_id != job.update_id);
-        if let Err(e) = persist_journal(&journal_file, &journal).await {
-            set_status(&status, &id, |s| {
-                s.last_download_error = Some(format!("could not update download queue: {e}"))
-            })
-            .await;
+        // Drain the durable queue before processing another job. Otherwise a
+        // failed removal can survive beyond the bounded replay window.
+        if !finish_download(
+            &journal_file,
+            &journal,
+            job.update_id,
+            &status,
+            &id,
+            &mut stop_rx,
+        )
+        .await
+        {
+            return;
         }
     }
 }
@@ -1573,6 +1618,14 @@ mod tests {
         std::fs::remove_file(&path).unwrap();
         enqueue_download(&path, &journal, job).await.unwrap();
         assert_eq!(load_journal(&path).unwrap()[0].update_id, 1);
+        std::fs::remove_file(&path).unwrap();
+        std::fs::create_dir(&path).unwrap();
+        assert!(complete_download(&path, &journal, 1).await.is_err());
+        assert_eq!(journal.lock().await.len(), 1);
+        std::fs::remove_dir(&path).unwrap();
+        complete_download(&path, &journal, 1).await.unwrap();
+        assert!(journal.lock().await.is_empty());
+        assert!(!path.exists());
         std::fs::remove_dir_all(dir).unwrap();
     }
 

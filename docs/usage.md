@@ -49,7 +49,7 @@ The public Telegram Bot API limits downloads to about **20 MB**. An oversized at
 3. Open **Local server** in Tele2Local, enable it, enter those credentials, and choose the binary path. On Windows use `telegram-bot-api.exe`; on Mac common Homebrew paths are also checked. Both platforms search PATH.
 4. A bot previously used with the public API must call Telegram’s [`logOut`](https://core.telegram.org/bots/api#logout) method before moving to the local server. Avoid putting your token into shared logs or screenshots.
 
-The managed process listens on `127.0.0.1` only. If startup fails, the dialog confirms that settings were saved and shows the server error; correct it and save again to retry. Exited processes are reported as stopped. diagnostics are in `bot-api/server.log` beside `bots.json`. Explicit per-bot API overrides take precedence over the managed server. The server’s cache retains downloaded originals, so allow disk space for both cache and saved attachments. Quit normally to stop the child process; a force-quit can leave it running.
+The managed process listens on `127.0.0.1` only. If startup fails, the dialog confirms that settings were saved and shows the server error; correct it and save again to retry. Exited processes are reported as stopped. Diagnostics are in `bot-api/server.log` beside `bots.json`. Explicit per-bot API overrides take precedence over the managed server. The server’s cache retains downloaded originals, so allow disk space for both cache and saved attachments. Quit normally to stop the child process; a force-quit can leave it running.
 
 ## Settings, backup, and recovery
 
@@ -61,7 +61,6 @@ Settings and state live under:
 `bots.json` stores bindings; `status.json` stores counters and polling progress; `pending-*.json` stores unfinished attachment jobs. Back up your notes and attachments separately. Tokens are in the OS credential store under `com.notekeeper.app`, so copying settings to another computer requires re-entering tokens.
 
 If a download queue cannot be read, the bot stops and reports it rather than overwriting it. Unreadable saved progress or an unavailable credential store stops startup to protect existing data. Preserve the original state files before attempting repair. Corrupt JSON configuration is moved to a `.corrupt-*` sibling. Avoid editing state files while the app is running.
-
 
 ## Durability and external processing
 

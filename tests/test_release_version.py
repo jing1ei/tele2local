@@ -26,6 +26,15 @@ class ReleaseVersionTests(unittest.TestCase):
             with self.subTest(tag=tag), self.assertRaises(ValueError):
                 prepare.validate(Path('.'), 'tag', tag)
 
+    def test_version_change_cannot_mislabel_rolling_assets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'src-tauri').mkdir()
+            manifest = Path('src-tauri/Cargo.toml').read_text()
+            (root / 'src-tauri/Cargo.toml').write_text(manifest.replace('version = "1.0.0"', 'version = "1.0.1"', 1))
+            with self.assertRaisesRegex(ValueError, 'rolling release contract'):
+                prepare.validate(root, 'branch', 'main')
+
     def test_config_version_mismatch_fails(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

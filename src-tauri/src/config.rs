@@ -16,7 +16,7 @@ fn default_daily_time() -> String {
 }
 
 /// Settings for an app-managed local Telegram Bot API server. Running one lifts
-/// the public API's 20 MB download cap to 2 GB, so large videos can be saved.
+/// the public API's 20 MB download cap, so large videos can be saved.
 /// A single server instance serves every bot.
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ServerConfig {

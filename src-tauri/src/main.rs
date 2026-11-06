@@ -33,7 +33,7 @@ pub struct BotHandle {
 }
 
 pub struct AppState {
-    /// Serializes config changes with bot/server restarts and shortcut updates.
+    /// Serializes config changes, local capture, and bot/server lifecycle changes.
     pub mutations: Mutex<()>,
     pub config_path: PathBuf,
     /// Where persisted per-bot status (counters + long-poll offset) lives.
@@ -973,6 +973,7 @@ async fn get_quick_target(state: State<'_, AppState>) -> Result<Option<QuickTarg
 /// Append text to a bot's file locally (used by the quick-capture window).
 #[tauri::command]
 async fn append_note(state: State<'_, AppState>, id: String, text: String) -> Result<(), String> {
+    let _mutation = state.mutations.lock().await;
     let file = {
         let cfg = state.config.lock().await;
         cfg.bots.iter().find(|b| b.id == id).map(|b| b.file.clone())
@@ -1000,6 +1001,7 @@ async fn save_files(
     id: String,
     paths: Vec<String>,
 ) -> Result<usize, String> {
+    let _mutation = state.mutations.lock().await;
     let (file, files_dir) = {
         let cfg = state.config.lock().await;
         let bot = cfg
@@ -1247,7 +1249,7 @@ fn main() {
             let status_path = config_dir.join("status.json");
 
             // Restore persisted counters + offsets from the last run.
-            let status = bots::load_status(&status_path)?;
+            let mut status = bots::load_status(&status_path)?;
 
             // Load config, then pull each bot's token from the Keychain. If an
             // older plaintext config still held tokens inline, they're migrated
@@ -1257,6 +1259,8 @@ fn main() {
                 config.save(&config_path)?;
             }
 
+            // A crash after config removal can leave historical status behind.
+            status.retain(|id, _| config.bots.iter().any(|bot| &bot.id == id));
             let first_launch = config.bots.is_empty();
             app.manage(AppState {
                 mutations: Mutex::new(()),

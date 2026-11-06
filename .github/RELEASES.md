@@ -1,24 +1,14 @@
 # Automatic releases
 
-Every push to `main` builds and tests Tele2Local, then creates or refreshes the
-public release **1.0.0** at tag `v1.0.0`. Manual runs on `main` do the same.
-All required platforms must pass before publication. This deliberately updates
-the same version instead of creating a new version for each commit.
+Pushes to `main` and manual **Release** runs on `main` refresh the rolling **1.0.0** release at `v1.0.0`. Other branches only produce workflow artifacts, retained for 14 days. CI runs once per release workflow and separately for pull requests.
 
-Downloads use `Tele2Local-1.0.0-OS-architecture.ext`:
-`Tele2Local-1.0.0-macOS-universal.dmg` and `Tele2Local-1.0.0-Windows-x64.exe`.
-The source archive is `Tele2Local-1.0.0-source.zip`. SHA256SUMS.txt covers every
-attached asset.
-
-The publisher checks the build commit against current `main`, uploads into a
-draft, downloads and verifies every asset, then moves `v1.0.0` to the built
-commit and publishes. A failed upload stays draft and can be retried. Older
-builds cannot overwrite a newer main commit. Only the publication job receives
-`contents: write`; pull requests do not publish.
-
-This policy supersedes older tag-only or immutable-release instructions.
-
-## Required packages
+All checks and both platform builds must pass. Downloads are:
 
 - `Tele2Local-1.0.0-macOS-universal.dmg`
 - `Tele2Local-1.0.0-Windows-x64.exe`
+- `Tele2Local-1.0.0-source.zip`
+- `SHA256SUMS.txt` covering the three packages
+
+The publisher rejects stale builds before uploading, downloads assets to verify checksums, checks `main` again, then moves the tag and updates release metadata. New releases remain draft until verified; existing releases stay public during refresh. GitHub asset replacement is not atomic: a failed upload can leave mixed assets, but does not advance the tag. Rerun the latest `main` workflow to repair an interrupted refresh.
+
+Only the publication job has `contents: write`. Installers are unsigned. The package contract is in [release.json](release.json); changing the rolling version requires updating that contract, the publisher, workflow filenames, and all application version fields together.

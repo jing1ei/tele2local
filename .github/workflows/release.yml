@@ -19,10 +19,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Test release-version validation
-        run: |
-          python -m unittest discover -s tests -p 'test_release_version.py'
-          python .github/scripts/test_release.py
       - id: version
         name: Validate tag and application version
         run: python scripts/prepare-release.py
@@ -104,7 +100,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

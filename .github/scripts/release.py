@@ -102,7 +102,7 @@ def publish(directory, config, sha, repo, notes=''):
     body += f'\n\nBuilt from `{sha}`. Updated automatically after a successful main build.\n'
     metadata = dict(name=VERSION, body=body, draft=True, prerelease=False)
     if releases:
-        release = api(prefix + f"/releases/{releases[0]['id']}", 'PATCH', metadata)
+        release = releases[0]
     else:
         release = api(prefix + '/releases', 'POST', dict(metadata, tag_name=TAG, target_commitish=sha))
     gh('release', 'upload', TAG, '--repo', repo, '--clobber',

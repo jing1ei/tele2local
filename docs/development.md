@@ -44,33 +44,15 @@ cargo fmt --manifest-path src-tauri/Cargo.toml --check
 cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 cargo test --locked --manifest-path src-tauri/Cargo.toml
 node --test tests/manager.test.cjs tests/quick.test.cjs tests/platform.test.cjs
-python -m unittest discover -s tests -p 'test_release_version.py'
-python .github/scripts/test_release.py
+python3 -m unittest discover -s tests -p 'test_release_version.py'
+python3 .github/scripts/test_release.py
 ```
 
-Frontend tests need Node.js 22+ and no npm dependencies. CI runs native checks on macOS and Windows and separately builds Intel Mac code. The release workflow produces a universal Mac build and a Windows x64 installer. Builds are unsigned unless signing is configured.
+Frontend tests need Node.js 22+ and no npm dependencies; release checks need Python 3.11+. CI runs native checks on macOS and Windows and separately builds Intel Mac code. The release workflow produces a universal Mac build and a Windows x64 installer. Builds are unsigned unless signing is configured.
 
 ## GitHub release
 
-Push the source to GitHub with Actions enabled. Every push to `main` (and every manual **Actions → Release → Run workflow**) validates the version, runs CI, builds both installers, and then refreshes a single public, rolling **1.0.0** release at tag `v1.0.0`. There is nothing to tag by hand.
-
-The workflow requires the version string in `Cargo.toml`, `Cargo.lock`, and `tauri.conf.json` to agree. After every platform build passes, the publisher uploads a universal Mac DMG and a Windows x64 setup executable plus `SHA256SUMS.txt` into the release, downloads each asset and verifies its checksum, moves `v1.0.0` to the built commit, and only then publishes it. A failed or stale build never moves the tag and leaves any existing release untouched. Artifacts from manual runs are retained for 14 days. See [.github/RELEASES.md](../.github/RELEASES.md) for the full policy and [.github/release.json](../.github/release.json) for the required asset names. Release builds use Tauri CLI 2.12.0 and a pinned Tauri action revision.
-
-### Versioned releases and on-demand builds (`build.yml`)
-
-A second workflow, **Build**, produces discrete releases independent of the rolling 1.0.0 pipeline:
-
-- **Tag a version** to cut a release:
-  ```bash
-  # 1. Bump the version in all three places so they agree
-  #    src-tauri/Cargo.toml, src-tauri/Cargo.lock, src-tauri/tauri.conf.json
-  git tag v1.2.3
-  git push origin v1.2.3
-  ```
-  The tag must be `v` + the exact `MAJOR.MINOR.PATCH` in `Cargo.toml`; otherwise the `prepare` job fails before anything builds. On success the workflow runs CI, builds the universal macOS DMG and the Windows x64 installer, uploads both with a `SHA256SUMS.txt`, and creates/publishes a GitHub Release named after the tag. Re-running the tag workflow updates the same release (`--clobber`). A prerelease tag such as `v1.2.3-rc1` is marked prerelease and is not set "latest".
-- **Run workflow manually** via **Actions → Build → Run workflow** on any branch to build both packages without creating or changing a release; they are kept as workflow artifacts for 30 days.
-
-A tagged build cannot be superseded by a newer push (its concurrency group never cancels in-progress runs). The two release pipelines have distinct triggers — `main` pushes drive the rolling 1.0.0 release, `v*` tags drive versioned releases — so they never both fire for one event.
+Push to `main` to run checks, build both installers, and refresh the rolling 1.0.0 release. **Actions → Release → Run workflow** does the same on `main`; other branches build artifacts without publishing. There is no tag-triggered second pipeline. See [release policy](../.github/RELEASES.md).
 
 ## Compatibility and credentials
 
@@ -82,4 +64,4 @@ Keep the bundle ID `com.notekeeper.desktop` and credential service `com.notekeep
 
 `assets/app-icon.svg` is the editable icon source; `app-icon.png` is its 1024×1024 export. Regenerate desktop icons with `cargo tauri icon app-icon.png`; mobile assets are not tracked.
 
-The README screenshots in `docs/screenshots/` are captures of the actual frontend served with a local demo bridge. All names, paths, counts, and attachments are fictional. They illustrate manager, quick capture, and daily-send UI; they do not verify native dialogs, OS hotkeys, Keychain/Credential Manager, or Telegram delivery. Retake screenshots after changing the corresponding UI. Do not capture real credentials or private note contents.
+Screenshots in `docs/screenshots/` use fictional data. Retake them after UI changes without including credentials or private notes.
