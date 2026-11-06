@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, windows-2022]
+        os: [macos-15, windows-2022]
     runs-on: ${{ matrix.os }}
     env:
       MACOSX_DEPLOYMENT_TARGET: '11.0'
@@ -52,7 +52,7 @@ jobs:
         run: node --test tests/manager.test.cjs tests/quick.test.cjs tests/platform.test.cjs
   intel-mac:
     timeout-minutes: 45
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       MACOSX_DEPLOYMENT_TARGET: '11.0'
     steps:
