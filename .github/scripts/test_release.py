@@ -1,4 +1,4 @@
-"""Offline regression tests for complete, repeatable 1.0.0 publication."""
+"""Offline regression tests for complete, repeatable 1.0.1 publication."""
 import hashlib
 import importlib.util
 import json
@@ -22,9 +22,9 @@ class ReleaseTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
         self.config = {'project': 'Fixture', 'notes': 'Fixture release', 'assets': {
-            'Fixture-1.0.0-macOS-universal.zip': 'mac.zip',
-            'Fixture-1.0.0-Windows-x64.zip': 'win.zip',
-            'Fixture-1.0.0-source.zip': 'source.zip'}}
+            'Fixture-1.0.1-macOS-universal.zip': 'mac.zip',
+            'Fixture-1.0.1-Windows-x64.zip': 'win.zip',
+            'Fixture-1.0.1-source.zip': 'source.zip'}}
         self.source = self.root / 'input'
         self.source.mkdir()
         for name in self.config['assets'].values():
@@ -43,7 +43,7 @@ class ReleaseTests(unittest.TestCase):
         if endpoint.endswith('/git/ref/heads/main'):
             return {'object': {'sha': self.heads.pop(0)}}
         if '/matching-refs/' in endpoint:
-            return [{'ref': 'refs/tags/v1.0.0'}] if self.existing else []
+            return [{'ref': 'refs/tags/v1.0.1'}] if self.existing else []
         if '/releases' in endpoint:
             return {'id': 7, 'draft': True}
         return {}
@@ -51,7 +51,7 @@ class ReleaseTests(unittest.TestCase):
     def pages(self, endpoint):
         if '/assets?' in endpoint:
             return [{'name': 'old-name.zip', 'id': 42}]
-        return [{'id': 7, 'tag_name': 'v1.0.0', 'draft': False}] if self.existing else []
+        return [{'id': 7, 'tag_name': 'v1.0.1', 'draft': False}] if self.existing else []
 
     def gh(self, *args, **kwargs):
         self.calls.append(('gh', args, None))
@@ -62,7 +62,7 @@ class ReleaseTests(unittest.TestCase):
             for path in (self.root / 'ready').iterdir():
                 shutil.copyfile(path, destination / path.name)
             if self.corrupt:
-                (destination / 'Fixture-1.0.0-Windows-x64.zip').write_bytes(b'corrupt')
+                (destination / 'Fixture-1.0.1-Windows-x64.zip').write_bytes(b'corrupt')
         return ''
 
     def publish(self):
@@ -100,7 +100,7 @@ class ReleaseTests(unittest.TestCase):
     def test_create_complete_public_release(self):
         self.publish()
         self.assertEqual(self.calls[-1][0], 'PATCH')
-        self.assertEqual(self.calls[-1][2]['name'], '1.0.0')
+        self.assertEqual(self.calls[-1][2]['name'], '1.0.1')
         self.assertFalse(self.calls[-1][2]['draft'])
         upload = next(i for i,c in enumerate(self.calls) if c[0]=='gh' and c[1][:2]==('release','upload'))
         download = next(i for i,c in enumerate(self.calls) if c[0]=='gh' and c[1][:2]==('release','download'))
@@ -108,26 +108,24 @@ class ReleaseTests(unittest.TestCase):
         self.assertLess(upload, download)
         self.assertLess(download, tag)
 
-    def test_existing_release_is_refreshed_and_tag_moves(self):
+    def test_published_release_is_immutable(self):
         self.existing = True
         self.publish()
-        self.assertFalse(any(m=='POST' and e.endswith('/releases') for m,e,_ in self.calls))
-        self.assertTrue(any(m=='PATCH' and e.endswith('/git/refs/tags/v1.0.0') and p=={'sha':'built','force':True} for m,e,p in self.calls))
-        self.assertTrue(any(m=='DELETE' and e.endswith('/assets/42') for m,e,_ in self.calls))
-        first = next(p for m,e,p in self.calls if m=='PATCH' and '/releases/' in e)
-        self.assertFalse(first['draft'])
+        self.assertFalse(any(method in ('POST', 'PATCH', 'DELETE', 'gh')
+                             for method, _, _ in self.calls))
+
 
     def test_failed_upload_never_moves_tag_or_publishes(self):
         self.fail_upload = True
         with self.assertRaises(RuntimeError): self.publish()
         self.assert_unpublished()
 
-    def test_failed_refresh_keeps_existing_release_public(self):
+    def test_published_release_skips_upload(self):
         self.existing = True
         self.fail_upload = True
-        with self.assertRaises(RuntimeError): self.publish()
-        self.assertFalse(any(m == 'PATCH' and '/releases/' in e for m, e, _ in self.calls))
-        self.assert_unpublished()
+        self.publish()
+        self.assertFalse(any(method == 'gh' for method, _, _ in self.calls))
+
 
     def test_corrupt_upload_never_moves_tag_or_publishes(self):
         self.corrupt = True
@@ -153,16 +151,16 @@ class ReleaseTests(unittest.TestCase):
 
     def test_local_corruption_never_contacts_github(self):
         directory = self.ready()
-        (directory / 'Fixture-1.0.0-Windows-x64.zip').write_bytes(b'bad')
+        (directory / 'Fixture-1.0.1-Windows-x64.zip').write_bytes(b'bad')
         with patch.object(release, 'api') as api:
             with self.assertRaises(ValueError):
                 release.publish(directory, self.config, 'built', 'owner/repo')
             api.assert_not_called()
 
     def test_repository_contract_has_fixed_version_and_platform(self):
-        config = json.loads((release.ROOT / '.github/release.json').read_text())
+        config = release.load_config()
         for name in config['assets']:
-            self.assertTrue(name.startswith(config['project'] + '-1.0.0-'), name)
+            self.assertTrue(name.startswith(config['project'] + '-1.0.1-'), name)
             self.assertRegex(name, r'-(macOS-(universal|arm64|x64)|Windows-(arm64|x64|x86)|source)\.')
 
 

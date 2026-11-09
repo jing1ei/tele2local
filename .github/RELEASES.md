@@ -1,14 +1,19 @@
 # Automatic releases
 
-Pushes to `main` and manual **Release** runs on `main` refresh the rolling **1.0.0** release at `v1.0.0`. Other branches only produce workflow artifacts, retained for 14 days. CI runs once per release workflow and separately for pull requests.
+The public filenames and supported platforms are defined in [Package contract](PACKAGING.md).
+The application version comes from `src-tauri/Cargo.toml`. Update its matching platform manifests
+and bump the patch version when changing the packaged release.
 
-All checks and both platform builds must pass. Downloads are:
+A push to main builds and tests every required platform. The publish job receives
+only the verified workflow artifacts and has exclusive write permission.
+It validates the package set and SHA-256 checksums, uploads into a draft,
+downloads the assets again to verify their hashes, then publishes the release.
 
-- `Tele2Local-1.0.0-macOS-universal.dmg`
-- `Tele2Local-1.0.0-Windows-x64.exe`
-- `Tele2Local-1.0.0-source.zip`
-- `SHA256SUMS.txt` covering the three packages
+Published versions and tags are immutable. A later build of an already published
+version leaves the public release intact. An interrupted draft can be retried
+from the same commit. A build superseded by another main commit cannot publish.
 
-The publisher rejects stale builds before uploading, downloads assets to verify checksums, checks `main` again, then moves the tag and updates release metadata. New releases remain draft until verified; existing releases stay public during refresh. GitHub asset replacement is not atomic: a failed upload can leave mixed assets, but does not advance the tag. Rerun the latest `main` workflow to repair an interrupted refresh.
-
-Only the publication job has `contents: write`. Installers are unsigned. The package contract is in [release.json](release.json); changing the rolling version requires updating that contract, the publisher, workflow filenames, and all application version fields together.
+macOS downloads are separate Apple silicon and Intel DMGs. The contained app
+retains the project's existing signing policy. Signing and notarization requirements
+are described in the README. Source exports inside the application are independent
+of public release packaging.

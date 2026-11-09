@@ -1,6 +1,6 @@
 [package]
 name = "tele2local"
-version = "1.0.0"
+version = "1.0.1"
 description = "Save Telegram messages and files locally for later processing"
 edition = "2021"
 license = "LicenseRef-Proprietary"

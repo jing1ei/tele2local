@@ -35,17 +35,24 @@ jobs:
       matrix:
         include:
           - os: macos-15
-            target: universal-apple-darwin
-            rust-targets: aarch64-apple-darwin,x86_64-apple-darwin
-            artifact: macOS-universal
-            filename: Tele2Local-1.0.0-macOS-universal.dmg
+            target: aarch64-apple-darwin
+            rust-targets: aarch64-apple-darwin
+            artifact: macOS-arm64
+            extension: dmg
             bundle: dmg
-            path: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+            path: src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            rust-targets: x86_64-apple-darwin
+            artifact: macOS-x64
+            extension: dmg
+            bundle: dmg
+            path: src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
           - os: windows-2022
             target: x86_64-pc-windows-msvc
             rust-targets: x86_64-pc-windows-msvc
             artifact: Windows-x64
-            filename: Tele2Local-1.0.0-Windows-x64.exe
+            extension: exe
             bundle: nsis
             path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
     runs-on: ${{ matrix.os }}
@@ -71,6 +78,14 @@ jobs:
           tauriScript: tauri
           includeUpdaterJson: false
           args: --target ${{ matrix.target }} --bundles ${{ matrix.bundle }} -- --locked
+      - name: Verify native Mac architecture
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          binary="src-tauri/target/${{ matrix.target }}/release/bundle/macos/Tele2Local.app/Contents/MacOS/tele2local"
+          expected=arm64
+          if [ "${{ matrix.artifact }}" = macOS-x64 ]; then expected=x86_64; fi
+          test "$(lipo -archs "$binary")" = "$expected"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -82,17 +97,17 @@ jobs:
           files = glob.glob('${{ matrix.path }}')
           assert len(files) == 1, files
           pathlib.Path('release-assets').mkdir()
-          shutil.copyfile(files[0], 'release-assets/${{ matrix.filename }}')
+          shutil.copyfile(files[0], 'release-assets/Tele2Local-${{ needs.prepare.outputs.version }}-${{ matrix.artifact }}.${{ matrix.extension }}')
           PYTHON
       - uses: actions/upload-artifact@v4
         with:
-          name: Tele2Local-1.0.0-${{ matrix.artifact }}
+          name: Tele2Local-${{ needs.prepare.outputs.version }}-${{ matrix.artifact }}
           if-no-files-found: error
           retention-days: 14
-          path: release-assets/${{ matrix.filename }}
+          path: release-assets/*
 
   publish:
-    name: Publish 1.0.0
+    name: Publish release
     needs: [prepare, build]
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
@@ -106,7 +121,7 @@ jobs:
           python-version: '3.12'
       - uses: actions/download-artifact@v4
         with:
-          pattern: Tele2Local-1.0.0-*
+          pattern: Tele2Local-${{ needs.prepare.outputs.version }}-*
           merge-multiple: true
           path: release-assets
       - name: Publish verified packages

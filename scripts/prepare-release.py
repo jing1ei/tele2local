@@ -11,8 +11,6 @@ def validate(root, ref_type, ref_name):
     version = manifest['package']['version']
     if not re.fullmatch(r'\d+\.\d+\.\d+', version):
         raise ValueError('Release version must be MAJOR.MINOR.PATCH')
-    if version != '1.0.0':
-        raise ValueError('The rolling release contract requires version 1.0.0')
     config = json.loads((root / 'src-tauri/tauri.conf.json').read_text())
     if config.get('version', version) != version:
         raise ValueError('Tauri and Cargo versions disagree')

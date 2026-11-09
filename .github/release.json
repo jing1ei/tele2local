@@ -1,9 +1,10 @@
 {
   "project": "Tele2Local",
   "assets": {
-    "Tele2Local-1.0.0-macOS-universal.dmg": "Tele2Local-1.0.0-macOS-universal.dmg",
-    "Tele2Local-1.0.0-Windows-x64.exe": "Tele2Local-1.0.0-Windows-x64.exe"
+    "Tele2Local-{version}-macOS-arm64.dmg": "Tele2Local-{version}-macOS-arm64.dmg",
+    "Tele2Local-{version}-macOS-x64.dmg": "Tele2Local-{version}-macOS-x64.dmg",
+    "Tele2Local-{version}-Windows-x64.exe": "Tele2Local-{version}-Windows-x64.exe"
   },
   "extras": [],
-  "notes": "Tele2Local 1.0.0. macOS 11+: universal Intel/Apple Silicon DMG. Windows 10/11: x64 setup EXE. Builds are unsigned. Source ZIP and SHA256SUMS.txt are included. See the README for installation."
+  "notes": "Tele2Local. Choose the macOS arm64 DMG for Apple silicon or x64 DMG for Intel. Windows downloads are EXE installers for the named processor architecture. Source ZIP and SHA256SUMS.txt are included. See the README for installation and signing details."
 }

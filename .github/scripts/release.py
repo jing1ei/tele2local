@@ -1,5 +1,6 @@
-"""Prepare and publish the complete rolling 1.0.0 release after a main build."""
+"""Prepare and publish the complete immutable versioned release after a main build."""
 import argparse
+import tomllib
 import fnmatch
 import hashlib
 import json
@@ -9,9 +10,17 @@ import shutil
 import subprocess
 import tempfile
 
-VERSION = '1.0.0'
-TAG = 'v' + VERSION
 ROOT = Path(__file__).resolve().parents[2]
+VERSION = tomllib.loads((ROOT / 'src-tauri/Cargo.toml').read_text())['package']['version']
+TAG = 'v' + VERSION
+
+
+def load_config():
+    raw = json.loads((ROOT / '.github/release.json').read_text())
+    return dict(raw, assets={
+        name.replace('{version}', VERSION): pattern.replace('{version}', VERSION)
+        for name, pattern in raw['assets'].items()
+    })
 
 
 def digest(path):
@@ -97,12 +106,20 @@ def publish(directory, config, sha, repo, notes=''):
     current()
     releases = [r for r in pages(prefix + '/releases?per_page=100') if r['tag_name'] == TAG]
     if len(releases) > 1:
-        raise ValueError('Multiple releases use v1.0.0')
+        raise ValueError(f'Multiple releases use {TAG}')
+    if releases and not releases[0]['draft']:
+        # A published version is immutable. Bump the version to ship an update;
+        # this run's packages stay available as workflow artifacts.
+        print(f'{TAG} is already published; leaving it untouched.')
+        return
+    refs = [r for r in api(prefix + '/git/matching-refs/tags/' + TAG) if r['ref'] == 'refs/tags/' + TAG]
+    if refs and refs[0]['object']['sha'] != sha:
+        raise ValueError(f'{TAG} already points at another commit; bump the version')
     body = notes or config['notes']
-    body += f'\n\nBuilt from `{sha}`. Updated automatically after a successful main build.\n'
-    metadata = dict(name=VERSION, body=body, draft=True, prerelease=False)
+    body += f'\n\nBuilt from `{sha}`.\n'
+    metadata = dict(name=VERSION, body=body, draft=True, prerelease='-' in VERSION)
     if releases:
-        release = releases[0]
+        release = api(prefix + f"/releases/{releases[0]['id']}", 'PATCH', metadata)
     else:
         release = api(prefix + '/releases', 'POST', dict(metadata, tag_name=TAG, target_commitish=sha))
     gh('release', 'upload', TAG, '--repo', repo, '--clobber',
@@ -120,10 +137,7 @@ def publish(directory, config, sha, repo, notes=''):
     for asset in pages(prefix + f"/releases/{release['id']}/assets?per_page=100"):
         if asset['name'] not in expected:
             api(prefix + f"/releases/assets/{asset['id']}", 'DELETE')
-    refs = api(prefix + '/git/matching-refs/tags/' + TAG)
-    if any(ref['ref'] == 'refs/tags/' + TAG for ref in refs):
-        api(prefix + '/git/refs/tags/' + TAG, 'PATCH', {'sha': sha, 'force': True})
-    else:
+    if not refs:
         api(prefix + '/git/refs', 'POST', {'ref': 'refs/tags/' + TAG, 'sha': sha})
     api(prefix + f"/releases/{release['id']}", 'PATCH', dict(metadata, draft=False, make_latest='true'))
     print(f'https://github.com/{repo}/releases/tag/{TAG}')
@@ -135,7 +149,7 @@ def main():
     parser.add_argument('--prepare-only', action='store_true')
     parser.add_argument('--notes', type=Path)
     args = parser.parse_args()
-    config = json.loads((ROOT / '.github/release.json').read_text())
+    config = load_config()
     output = prepare(args.directory, args.directory.parent / 'release-ready', config)
     if not args.prepare_only:
         sha = os.environ['GITHUB_SHA']
