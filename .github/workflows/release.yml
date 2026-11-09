@@ -39,14 +39,14 @@ jobs:
             rust-targets: aarch64-apple-darwin
             artifact: macOS-arm64
             extension: dmg
-            bundle: dmg
+            bundle: app,dmg
             path: src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
           - os: macos-15-intel
             target: x86_64-apple-darwin
             rust-targets: x86_64-apple-darwin
             artifact: macOS-x64
             extension: dmg
-            bundle: dmg
+            bundle: app,dmg
             path: src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
           - os: windows-2022
             target: x86_64-pc-windows-msvc
